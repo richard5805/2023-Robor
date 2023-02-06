@@ -2,6 +2,8 @@ package frc.robot.autos;
 
 import frc.robot.Constants;
 import frc.robot.subsystems.Swerve;
+import com.pathplanner.lib.PathPlanner;
+import com.pathplanner.lib.PathPlannerTrajectory;
 
 import java.util.List;
 
@@ -19,10 +21,12 @@ import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
 public class exampleAuto extends SequentialCommandGroup {
     public exampleAuto(Swerve s_Swerve){
+        PathPlannerTrajectory trajectory = PathPlanner.loadPath("Negus", 2, 2);
+
         TrajectoryConfig config =
             new TrajectoryConfig(
-                    Constants.AutoConstants.kMaxSpeedMetersPerSecond,
-                    Constants.AutoConstants.kMaxAccelerationMetersPerSecondSquared)
+                    2.0, 2.0
+                    )
                 .setKinematics(Constants.Swerve.swerveKinematics);
 
         // An example trajectory to follow.  All units in meters.
@@ -31,9 +35,10 @@ public class exampleAuto extends SequentialCommandGroup {
                 // Start at the origin facing the +X direction
                 new Pose2d(0, 0, new Rotation2d(0)),
                 // Pass through these two interior waypoints, making an 's' curve path
-                List.of(new Translation2d(1, 1), new Translation2d(2, -1)),
+                List.of(new Translation2d(0.5, 0.5), new Translation2d(1, -0.5), new Translation2d(1.5, 0)
+                , new Translation2d(1, -0.5),new Translation2d(0.5, 0.5)),
                 // End 3 meters straight ahead of where we started, facing forward
-                new Pose2d(3, 0, new Rotation2d(0)),
+                new Pose2d(0, 0, new Rotation2d(0)),
                 config);
 
         var thetaController =
@@ -43,6 +48,7 @@ public class exampleAuto extends SequentialCommandGroup {
 
         SwerveControllerCommand swerveControllerCommand =
             new SwerveControllerCommand(
+                // bitchard 
                 exampleTrajectory,
                 s_Swerve::getPose,
                 Constants.Swerve.swerveKinematics,
@@ -55,7 +61,7 @@ public class exampleAuto extends SequentialCommandGroup {
 
         addCommands(
             new InstantCommand(() -> s_Swerve.resetOdometry(exampleTrajectory.getInitialPose())),
-            swerveControllerCommand
+            s_Swerve.createCommandForTrajectory(trajectory).andThen(() -> drive.drive(new ChassisSpeeds(0, 0, 0)))
         );
     }
 }
